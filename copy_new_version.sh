@@ -1,1 +1,0 @@
-cp /ws2/idserver.ui/target/idserver.ui-0.0.1-SNAPSHOT.war vfb-curation-ui.war

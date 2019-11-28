@@ -2,10 +2,10 @@
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
   <groupId>vfb.ebi</groupId>
-  <artifactId>idserver.ui</artifactId>
+  <artifactId>dataingest</artifactId>
   <packaging>war</packaging>
   <version>0.0.1-SNAPSHOT</version>
-  <name>VFB IDServer UI</name>
+  <name>VFB Data Ingest UI</name>
   <url>http://maven.apache.org</url>
   <prerequisites>
 		<maven>3</maven>
@@ -20,7 +20,7 @@
 		<maven.compiler.target>1.8</maven.compiler.target>
 		<!-- If there are no local customisations, this can also be "fetch" or 
 			"cdn" -->
-		<vaadin.theme>pheno</vaadin.theme>
+		<vaadin.theme>vfb</vaadin.theme>
 		<vaadin.widgetset.mode>local</vaadin.widgetset.mode>
 	</properties>
 	
@@ -77,17 +77,20 @@
 			<artifactId>viritin</artifactId>
 			<version>2.3</version>
 		</dependency>
-		<dependency>
-			<groupId>monarch.ontology.phenoworkbench</groupId>
-			<artifactId>analytics</artifactId>
-			<version>0.0.1</version>
-		</dependency>
-		<dependency>
-			<groupId>monarch.ontology.phenoworkbench</groupId>
-			<artifactId>ui-utils</artifactId>
-			<version>0.0.1</version>
-		</dependency>
-		<dependency>
+	  <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpcore -->
+	  <dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>httpcore</artifactId>
+		  <version>4.4.12</version>
+	  </dependency>
+	  <!-- https://mvnrepository.com/artifact/org.apache.httpcomponents/httpclient -->
+	  <dependency>
+		  <groupId>org.apache.httpcomponents</groupId>
+		  <artifactId>httpclient</artifactId>
+		  <version>4.5.10</version>
+	  </dependency>
+
+	  <dependency>
     <groupId>com.atlassian.commonmark</groupId>
     <artifactId>commonmark</artifactId>
     <version>0.11.0</version>
@@ -104,7 +107,22 @@
     <artifactId>json</artifactId>
     <version>20180813</version>
 </dependency>
+	  <dependency>
+		  <groupId>org.glassfish.jersey.core</groupId>
+		  <artifactId>jersey-client</artifactId>
+		  <version>2.29.1</version>
+	  </dependency>
+	  <dependency>
+		  <groupId>org.glassfish.jersey.media</groupId>
+		  <artifactId>jersey-media-json-jackson</artifactId>
+		  <version>2.25.1</version>
+	  </dependency>
 
+      <dependency>
+          <groupId>com.googlecode.json-simple</groupId>
+          <artifactId>json-simple</artifactId>
+          <version>1.1.1</version>
+      </dependency>
 
   </dependencies>
   <build>
