@@ -64,28 +64,16 @@ public class AddNeuronPanel extends VerticalLayout{
 		Arrays.asList(external_identifiers.getValue().split(";")).forEach(e->external_identifiers_set.add(e.trim()));
 		d.setExternal_identifiers(external_identifiers_set);
 
-		String msg;
+		;
 		try {
-			msg = api.addNeuron(d);
-			if(msg.startsWith("{")) {
-				JSONObject obj = new JSONObject(msg);
-				//System.out.println(obj.toString());
-				String vfb_id = obj.getString("vfbid");
-				d.setVfb_id(vfb_id);
-				d.setState("Neurons added successfully!");
-				msg = "Neuron created with ID: " + vfb_id;
-			}
-			else {
-				d.setVfb_id("failed");
-				d.setState(msg);
-			}
+			api.addNeuron(d);
 		} catch (APIAccessException e) {
-			msg = e.getMessage();
+			String msg = e.getMessage();
 			// TODO Auto-generated catch block
-			d.setVfb_id("failed");
+			d.setId("failed");
 			d.setState(msg);
 		}
-		iri.setValue(msg);
+		iri.setValue(d.getState());
 	}
 
 }

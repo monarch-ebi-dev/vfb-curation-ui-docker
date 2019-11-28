@@ -41,16 +41,11 @@ public class AddProjectPanel extends VerticalLayout {
 		d.setOrcid(orcid.getValue());
 		d.setSource_data(source_data.getValue());
 		d.setTitle(title.getValue());
-		
+
 		String msg;
 		try {
-			msg = api.addDataSet(d);
-			if(msg.startsWith("{")) {
-				JSONObject obj = new JSONObject(msg);
-				//System.out.println(obj.toString());
-				String vfb_id = obj.getString("vfbid");
-				msg = "Dataset created with ID: " + vfb_id;
-			}
+			api.addDataset(d);
+			msg = "Dataset created with ID: " + d.getId();
 		} catch (APIAccessException e) {
 			msg = e.getMessage();
 		}

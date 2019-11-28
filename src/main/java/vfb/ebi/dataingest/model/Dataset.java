@@ -89,4 +89,8 @@ public class Dataset implements DataIngestResource {
 	public List<Neuron> getNeurons() {
 		return neurons;
 	}
+
+	public void addNeurons(List<Neuron> neurons) {
+		this.neurons.addAll(neurons);
+	}
 }

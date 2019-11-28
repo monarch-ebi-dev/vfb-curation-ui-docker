@@ -32,4 +32,8 @@ public class Project implements DataIngestResource, Serializable {
     public String getId() {
         return id;
     }
+
+    public void addDatasets(List<Dataset> datasets) {
+        this.datasets.addAll(datasets);
+    }
 }

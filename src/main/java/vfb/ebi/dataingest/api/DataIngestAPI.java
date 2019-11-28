@@ -17,11 +17,6 @@ public class DataIngestAPI {
     //private HttpClient client = HttpClientBuilder.create().build();
     private Client client = ClientBuilder.newClient();
     private WebTarget webTarget = client.target(WebAppConfig.getInstance().DATAINGESTAPI_URL);
-    private WebTarget neuronWebTarget = webTarget.path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURON);
-    private WebTarget neuronsWebTarget = webTarget.path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURONS);
-    private WebTarget datasetWebTarget = webTarget.path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASET);
-    private WebTarget projectWebTarget = webTarget.path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECT);
-    private WebTarget userWebTarget = webTarget.path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_USER);
 
     private static DataIngestAPI api = null;
 
@@ -58,49 +53,67 @@ public class DataIngestAPI {
         return postRequest(n.toJSON(),endpoint);
     }
 */
-    private boolean isValidAPIToken(String response) {
-        return false;
-    }
-
-
     /*
      * PUBLIC API METHODS
      */
 
-    public Neuron getNeurons(String datasetid) {
-        return neuronsWebTarget
+    private List<Neuron> getNeurons(String datasetid) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURONS)
                 .path(String.valueOf(datasetid))
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
                 .get(new GenericType<List<Neuron>>(){});
     }
 
-    public Neuron getNeuron(String id) {
-        return neuronWebTarget
+    private Neuron getNeuron(String id) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURON)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
                 .get(Neuron.class);
     }
 
-    public Dataset getDataset(String id) {
-        return datasetWebTarget
+    private List<Dataset> getDatasets(String projectid) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASETS)
+                .path(String.valueOf(projectid))
+                .request(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .get(new GenericType<List<Dataset>>(){});
+    }
+
+    private Dataset getDataset(String id) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASET)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
                 .get(Dataset.class);
     }
 
-    public Dataset getProject(String id) {
-        return projectWebTarget
+    private List<Project> getProjects(String datasetid) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECTS)
+                .path(String.valueOf(datasetid))
+                .request(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .get(new GenericType<List<Project>>(){});
+    }
+
+    private Project getProject(String id) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECT)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
-                .get(Dataset.class);
+                .get(Project.class);
     }
 
-    public User login(String code) {
-        return userWebTarget
+    private User getUser(String code) {
+        return webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_LOGIN)
                 .path(String.valueOf(code))
                 .queryParam("code",code)
                 .request(MediaType.APPLICATION_JSON)
@@ -108,37 +121,42 @@ public class DataIngestAPI {
     }
 
     public void addNeuron(Neuron n) throws APIAccessException {
-        Response r = neuronWebTarget
+        Response r = webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURON)
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
                 .post(Entity.entity(n, MediaType.APPLICATION_JSON));
     }
 
-    public void addDataset(Neuron n) throws APIAccessException {
-        Response r = datasetWebTarget
+    public void addDataset(Dataset n) throws APIAccessException {
+        Response r = webTarget
+                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASET)
                 .request(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
                 .post(Entity.entity(n, MediaType.APPLICATION_JSON));
     }
 
-    public void login(String code, User user) throws APIAccessException {
-        user.setApiToken("asasa");
-        user.setOrcid("orcidsaa");
-        user.setUsername("Nico");
+    public void login(String code) throws APIAccessException {
+        User.getInstance().login(getUser(code));
+        List<Project> userProjects = getProjects(User.getInstance().getId());
+        User.getInstance().addProjects(userProjects);
 
-        List<Project> userProjects = getUserProjects(user);
-        user.addProjects(userProjects);
-        //todo neurons should probably be loaded lazily...
-    }
-
-    private List<Project> getUserProjects(User user) {
-        List<Project> userProjects = new ArrayList<>();
-
-        try {
-           userProjects.addAll(parseProjects(postRequest(user,WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECT)));
-        } catch (APIAccessException e) {
-            e.printStackTrace();
+        for(Project p: userProjects) {
+            List<Dataset> datasets = getDatasets(p.getId());
+            p.addDatasets(datasets);
+            for(Dataset d:datasets) {
+                //todo neurons should probably be loaded lazily...
+                List<Neuron> neurons = getNeurons(d.getId());
+                d.addNeurons(neurons);
+            }
         }
+
+
+    }
+
+    private List<Project> getUserProjects(List<String> projectids) {
+        List<Project> userProjects = new ArrayList<>();
+        projectids.forEach(id->userProjects.add(getProject(id)));
 
         //DESIGN IN SOUCH A WAY THAT A USER OBJECT ALLWAYS COMES WITH REFERENCES TO THEIR PROJECTS.. FROM THERE YOU USE THOSE REFERENCES TO
         // RETRIEVE THE PROJECT METADATA
@@ -150,12 +168,12 @@ public class DataIngestAPI {
         Dataset d3 = new Dataset("Zoglu2012");
 
         Neuron n1 = new Neuron();
-        n1.setVfb_id("X1");
+        n1.setId("X1");
         n1.setPrimary_name("X1_name");
         n1.setClassification("NEURINL100-");
 
         Neuron n2 = new Neuron();
-        n2.setVfb_id("X2");
+        n2.setId("X2");
         n2.setPrimary_name("X2 dd d _name");
         n2.setClassification("ssdsd-");
 
@@ -166,10 +184,6 @@ public class DataIngestAPI {
         p1.addDataset(d2);
         p2.addDataset(d3);
         return userProjects;
-    }
-
-    private Collection<? extends Project> parseProjects(String postRequest) {
-        return null;
     }
 
 }

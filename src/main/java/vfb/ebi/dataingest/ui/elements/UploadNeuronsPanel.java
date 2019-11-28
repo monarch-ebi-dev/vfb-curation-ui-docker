@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-import org.json.JSONObject;
-
 import com.opencsv.bean.CsvToBean;
 import com.opencsv.bean.CsvToBeanBuilder;
 import com.vaadin.icons.VaadinIcons;
@@ -92,7 +90,7 @@ public class UploadNeuronsPanel extends VerticalLayout {
 		}
 		table.setItems(neurons);
 		table.addColumn(Neuron::getPrimary_name).setCaption("Name");
-		table.addColumn(Neuron::getVfb_id).setCaption("Id");
+		table.addColumn(Neuron::getId).setCaption("Id");
 		table.addComponentColumn(this::buildGetInfoButton);
 		table.setSizeFull();
 		table.setVisible(true);
@@ -115,22 +113,13 @@ public class UploadNeuronsPanel extends VerticalLayout {
 	private void addNeuron(Neuron d) {
 		String msg;
 		try {
-			msg = api.addNeuron(d);
-			if(msg.startsWith("{")) {
-				JSONObject obj = new JSONObject(msg);
-				//System.out.println(obj.toString());
-				String vfb_id = obj.getString("vfbid");
-				d.setVfb_id(vfb_id);
-				d.setState("Neurons added successfully!");
-			} 
-			else {
-				d.setVfb_id("failed");
-				d.setState(msg);
-			}
+			api.addNeuron(d);
+			d.setState("Neurons added successfully!");
+
 		} catch (APIAccessException e) {
 			msg = e.getMessage();
 			// TODO Auto-generated catch block
-			d.setVfb_id("failed");
+			d.setId("");
 			d.setState(msg);
 		}
 	}

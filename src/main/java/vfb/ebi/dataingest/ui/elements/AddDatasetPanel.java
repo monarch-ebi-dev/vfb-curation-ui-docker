@@ -4,7 +4,6 @@ import com.vaadin.ui.Button;
 import com.vaadin.ui.RichTextArea;
 import com.vaadin.ui.TextField;
 import com.vaadin.ui.VerticalLayout;
-import org.json.JSONObject;
 import vfb.ebi.dataingest.api.APIAccessException;
 import vfb.ebi.dataingest.api.DataIngestAPI;
 import vfb.ebi.dataingest.model.Dataset;
@@ -35,23 +34,15 @@ public class AddDatasetPanel extends VerticalLayout{
 		this.addComponent(iri);
 	}
 
-	private void addDataset() {
+	 void addDataset() {
 		Dataset d = new Dataset(shortname.getValue());
 		d.setProject(project.getValue());
 		d.setOrcid(orcid.getValue());
 		d.setSource_data(source_data.getValue());
 		d.setTitle(title.getValue());
-		
-		String msg;
+
 		try {
-			msg = api.addDataSet(d);
-			if(msg.startsWith("{")) {
-				JSONObject obj = new JSONObject(msg);
-				//System.out.println(obj.toString());
-				String vfb_id = obj.getString("vfbid");
-				msg = "Dataset created with ID: " + vfb_id;
-				iri.setValue(msg);
-			}
+			api.addDataset(d);
 		} catch (APIAccessException e) {
 			e.printStackTrace();
 		}

@@ -6,8 +6,9 @@ import com.vaadin.server.Page;
 import com.vaadin.ui.*;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
+import vfb.ebi.dataingest.api.APIAccessException;
+import vfb.ebi.dataingest.api.DataIngestAPI;
 import vfb.ebi.dataingest.api.WebAppConfig;
-import vfb.ebi.dataingest.model.User;
 import vfb.ebi.dataingest.ui.elements.OrcidSignInButton;
 
 import java.net.URI;
@@ -19,18 +20,9 @@ public class LoginView extends DataIngestView {
 
     public LoginView(Navigator navigator) {
         super(navigator);
-        if(isLoggedIn()) {
-            addComponent(new Label("You are already logged in!"));
-        }
-        else {
-            Button signIn = new OrcidSignInButton();
-            signIn.addClickListener(this::signIn);
-            addComponent(signIn);
-        }
-    }
-
-    private boolean isLoggedIn() {
-        return User.getInstance().authenticate();
+        Button signIn = new OrcidSignInButton();
+        signIn.addClickListener(this::signIn);
+        addComponent(signIn);
     }
 
     private void signIn(Button.ClickEvent clickEvent) {
@@ -38,7 +30,7 @@ public class LoginView extends DataIngestView {
     }
 
     private void goToExternalLogin() {
-        Page.getCurrent().open("http://localhost:8080/dataingest-ui/login?code=ABCDE", null);
+        Page.getCurrent().open(WebAppConfig.getInstance().authoriseURL,null);
     }
 
     @Override
@@ -46,8 +38,12 @@ public class LoginView extends DataIngestView {
         Optional<String> code = parseCode(Page.getCurrent().getLocation());
 
         if (code.isPresent()) {
-            Notification.show("Welcome to the Animal Farm: "+code.get());
-            User.getInstance().login(code.get());
+            Notification.show("Welcome to the VFB Data Ingest! "+code.get());
+            try {
+                DataIngestAPI.getInstance().login(code.get());
+            } catch (APIAccessException e) {
+                e.printStackTrace();
+            }
         }
     }
 

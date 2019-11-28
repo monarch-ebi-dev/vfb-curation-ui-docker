@@ -29,6 +29,6 @@ public class MainView extends DataIngestView {
     private void updateUserData() {
         this.welcome.setValue(String.format("Welcome %s",User.getInstance().getUsername()));
         this.token.setValue(String.format("API TOKEN: %s",User.getInstance().getApiToken()));
-        this.orcid.setValue(String.format("Orcid: %s",User.getInstance().getOrcid()));
+        this.orcid.setValue(String.format("Orcid: %s",User.getInstance().getId()));
     }
 }

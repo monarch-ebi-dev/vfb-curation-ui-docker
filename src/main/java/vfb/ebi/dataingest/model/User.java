@@ -1,6 +1,5 @@
 package vfb.ebi.dataingest.model;
 
-import vfb.ebi.dataingest.api.APIAccessException;
 import vfb.ebi.dataingest.api.DataIngestAPI;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -9,7 +8,7 @@ import java.util.List;
 public class User implements DataIngestResource, Serializable {
     private String apitoken = "";
     private String username = "Anonymous";
-    private String orcid = "";
+    private String id = "";
     private static User user = null;
     private List<Project> projects = new ArrayList<>();
 
@@ -21,13 +20,22 @@ public class User implements DataIngestResource, Serializable {
         return user;
     }
 
+    public static void login(User u) {
+        // Here the already existing user object is changed.. Not sure whether this can be replaced by 'user = u';
+        getInstance().setApiToken(u.apitoken);
+        getInstance().setUsername(u.username);
+        getInstance().setId(u.id);
+        getInstance().setApiToken(u.apitoken);
+        getInstance().setProjects(u.projects);
+    }
+
     private User() {}
 
     public String getApiToken() {
         return apitoken;
     }
 
-    public void setApiToken(String apitoken) {
+    private void setApiToken(String apitoken) {
         this.apitoken = apitoken;
     }
 
@@ -35,28 +43,20 @@ public class User implements DataIngestResource, Serializable {
         return username;
     }
 
-    public void setUsername(String username) {
+    private void setUsername(String username) {
         this.username = username;
     }
 
-    public String getOrcid() {
-        return orcid;
+    public String getId() {
+        return id;
     }
 
-    public void setOrcid(String orcid) {
-        this.orcid = orcid;
+    private void setId(String orcid) {
+        this.id = id;
     }
 
-    public boolean authenticate() {
-        return DataIngestAPI.getInstance().authenticate(getApiToken());
-    }
-
-    public void login(String s) {
-        try {
-            DataIngestAPI.getInstance().login(s, User.getInstance());
-        } catch (APIAccessException e) {
-            e.printStackTrace();
-        }
+    private void setProjects(List<Project> projects) {
+        this.projects = projects;
     }
 
     @Override
@@ -74,5 +74,9 @@ public class User implements DataIngestResource, Serializable {
 
     public void addProjects(List<Project> projects) {
         this.projects.addAll(projects);
+    }
+
+    public boolean isLoggedIn() {
+        return !apitoken.isEmpty();
     }
 }

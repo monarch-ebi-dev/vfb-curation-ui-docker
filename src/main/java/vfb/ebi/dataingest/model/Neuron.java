@@ -8,7 +8,7 @@ import com.opencsv.bean.CsvBindByName;
 
 public class Neuron implements DataIngestResource, Serializable {
 
-	private String vfb_id = "";
+	private String id = "";
 	
 	private String state = "";
 	
@@ -48,8 +48,8 @@ public class Neuron implements DataIngestResource, Serializable {
 	public Neuron() {
 	}
 
-	public String getOrcid() {
-		return orcid;
+	public String getId() {
+		return id;
 	}
 
 	public void setOrcid(String orcid) {
@@ -143,14 +143,6 @@ public class Neuron implements DataIngestResource, Serializable {
 	public void setImaging_type(String imaging_type) {
 		this.imaging_type = imaging_type;
 	}
-	
-	public String getVfb_id() {
-		return vfb_id;
-	}
-
-	public void setVfb_id(String vfb_id) {
-		this.vfb_id = vfb_id;
-	}
 
 	public String getState() {
 		return state;
@@ -192,4 +184,7 @@ public class Neuron implements DataIngestResource, Serializable {
 		return json;
 	}
 
+	public void setId(String id) {
+		this.id = id;
+	}
 }
