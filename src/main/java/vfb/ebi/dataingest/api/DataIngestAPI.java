@@ -2,21 +2,23 @@ package vfb.ebi.dataingest.api;
 
 import java.util.*;
 
+import org.json.JSONException;
+import org.json.JSONObject;
 import vfb.ebi.dataingest.model.*;
+
+import javax.security.auth.login.FailedLoginException;
 import javax.ws.rs.client.Client;
 import javax.ws.rs.client.ClientBuilder;
 import javax.ws.rs.client.Entity;
 import javax.ws.rs.client.WebTarget;
-import javax.ws.rs.core.GenericType;
-import javax.ws.rs.core.HttpHeaders;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
+import javax.ws.rs.core.*;
 
 public class DataIngestAPI {
 
     //private HttpClient client = HttpClientBuilder.create().build();
     private Client client = ClientBuilder.newClient();
     private WebTarget webTarget = client.target(WebAppConfig.getInstance().DATAINGESTAPI_URL);
+    private WebTarget orcidWebTarget = client.target(WebAppConfig.getInstance().ORCIDAPI_URL);
 
     private static DataIngestAPI api = null;
 
@@ -62,8 +64,9 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURONS)
                 .path(String.valueOf(datasetid))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
-                .get(new GenericType<List<Neuron>>(){});
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
+                .get(new GenericType<List<Neuron>>() {
+                });
     }
 
     private Neuron getNeuron(String id) {
@@ -71,7 +74,7 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURON)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
                 .get(Neuron.class);
     }
 
@@ -80,8 +83,9 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASETS)
                 .path(String.valueOf(projectid))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
-                .get(new GenericType<List<Dataset>>(){});
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
+                .get(new GenericType<List<Dataset>>() {
+                });
     }
 
     private Dataset getDataset(String id) {
@@ -89,7 +93,7 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASET)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
                 .get(Dataset.class);
     }
 
@@ -98,8 +102,9 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECTS)
                 .path(String.valueOf(datasetid))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
-                .get(new GenericType<List<Project>>(){});
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
+                .get(new GenericType<List<Project>>() {
+                });
     }
 
     private Project getProject(String id) {
@@ -107,24 +112,29 @@ public class DataIngestAPI {
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_PROJECT)
                 .path(String.valueOf(id))
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
                 .get(Project.class);
     }
 
-    private User getUser(String code) {
-        return webTarget
-                .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_LOGIN)
-                .path(String.valueOf(code))
-                .queryParam("code",code)
-                .request(MediaType.APPLICATION_JSON)
-                .get(User.class);
+    public void login(String code) throws FailedLoginException {
+        System.out.println(code);
+        try {
+            User user = webTarget
+                    .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_LOGIN)
+                    .queryParam("code", code)
+                    .request(MediaType.APPLICATION_JSON)
+                    .get(User.class);
+            User.getInstance().login(user);
+        } catch (Exception e) {
+            throw new FailedLoginException();
+        }
     }
 
     public void addNeuron(Neuron n) throws APIAccessException {
         Response r = webTarget
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_NEURON)
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
                 .post(Entity.entity(n, MediaType.APPLICATION_JSON));
     }
 
@@ -132,31 +142,55 @@ public class DataIngestAPI {
         Response r = webTarget
                 .path(WebAppConfig.getInstance().DATAINGESTAPI_ENDPOINT_DATASET)
                 .request(MediaType.APPLICATION_JSON)
-                .header(HttpHeaders.AUTHORIZATION,User.getInstance().getApiToken())
+                .header(HttpHeaders.AUTHORIZATION, User.getInstance().getApiToken())
                 .post(Entity.entity(n, MediaType.APPLICATION_JSON));
     }
 
-    public void login(String code) throws APIAccessException {
-        User.getInstance().login(getUser(code));
+    public void load_user_data(String code) throws APIAccessException {
+
         List<Project> userProjects = getProjects(User.getInstance().getId());
         User.getInstance().addProjects(userProjects);
 
-        for(Project p: userProjects) {
+        for (Project p : userProjects) {
             List<Dataset> datasets = getDatasets(p.getId());
             p.addDatasets(datasets);
-            for(Dataset d:datasets) {
+            for (Dataset d : datasets) {
                 //todo neurons should probably be loaded lazily...
                 List<Neuron> neurons = getNeurons(d.getId());
                 d.addNeurons(neurons);
             }
         }
+    }
 
 
+    public void authenticate2(String code) throws FailedLoginException {
+        MultivaluedMap<String, String> formData = new MultivaluedHashMap();
+        formData.add("client_id", WebAppConfig.getInstance().CLIENT_ID);
+        formData.add("client_secret", WebAppConfig.getInstance().CLIENT_SECRET);
+        formData.add("grant_type", "authorization_code");
+        formData.add("code", code);
+        formData.add("redirect_uri", WebAppConfig.getInstance().LOGIN_REDIRECT_URI);
+
+        Response r = orcidWebTarget
+                .path(WebAppConfig.getInstance().ORCIDAPI_ENDPOINT_TOKEN)
+                .request().accept(MediaType.APPLICATION_JSON)
+                .post(Entity.form(formData));
+        if(r.getStatus()==200) {
+            System.out.println();
+            String orcid_token = r.readEntity(String.class);
+            try {
+                JSONObject jsonObject = new JSONObject(orcid_token);
+            } catch (JSONException err){
+                throw new FailedLoginException("ORCID API token was not valid JSON");
+            }
+        } else {
+            throw new FailedLoginException();
+        }
     }
 
     private List<Project> getUserProjects(List<String> projectids) {
         List<Project> userProjects = new ArrayList<>();
-        projectids.forEach(id->userProjects.add(getProject(id)));
+        projectids.forEach(id -> userProjects.add(getProject(id)));
 
         //DESIGN IN SOUCH A WAY THAT A USER OBJECT ALLWAYS COMES WITH REFERENCES TO THEIR PROJECTS.. FROM THERE YOU USE THOSE REFERENCES TO
         // RETRIEVE THE PROJECT METADATA

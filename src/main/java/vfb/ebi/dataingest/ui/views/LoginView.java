@@ -11,6 +11,7 @@ import vfb.ebi.dataingest.api.DataIngestAPI;
 import vfb.ebi.dataingest.api.WebAppConfig;
 import vfb.ebi.dataingest.ui.elements.OrcidSignInButton;
 
+import javax.security.auth.login.FailedLoginException;
 import java.net.URI;
 import java.nio.charset.Charset;
 import java.util.List;
@@ -35,27 +36,31 @@ public class LoginView extends DataIngestView {
 
     @Override
     public void enter(ViewChangeListener.ViewChangeEvent event) {
-        Optional<String> code = parseCode(Page.getCurrent().getLocation());
+        URI location = Page.getCurrent().getLocation();
+        System.out.println("ENTER LOGIN: "+location);
+        List<NameValuePair> params = URLEncodedUtils.parse(location, Charset.forName("UTF-8"));
+
+        Optional<String> code = Optional.empty();
+
+        for (NameValuePair param : params) {
+            System.out.println(param.getName());
+            if(param.getName().equals("code")) {
+                code = Optional.of(param.getValue());
+            }
+        }
 
         if (code.isPresent()) {
-            Notification.show("Welcome to the VFB Data Ingest! "+code.get());
+            System.out.println("Authenticating with authorisation code.");
             try {
                 DataIngestAPI.getInstance().login(code.get());
-            } catch (APIAccessException e) {
+            } catch (FailedLoginException e) {
                 e.printStackTrace();
             }
         }
     }
 
     private Optional<String> parseCode(URI location) {
-        List<NameValuePair> params = URLEncodedUtils.parse(location, Charset.forName("UTF-8"));
 
-        for (NameValuePair param : params) {
-           System.out.println(param.getName());
-           if(param.getName().equals("code")) {
-               return Optional.of(param.getValue());
-           }
-        }
         return Optional.empty();
     }
 
